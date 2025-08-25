@@ -1,35 +1,30 @@
+#include "tm4c123gh6pm.h"
 #include <stdint.h>
 #include <stdbool.h>
-#include "tm4c123gh6pm.h"
-int RED  = 0x02;  // PF1 - Red LED
-int BLUE = 0x04;  // PF2 - Blue LED
-int SW1  = 0x10;  // PF4 - Switch 1
-int SW2  = 0x01;  // PF0 - Switch 2
+void delay(void){
+    int i;
+    for(i=0; i<50000; i++);  // Adjust count
+}
 
-int main(void) {
-    SYSCTL_RCGCGPIO_R = 0x20;         // Enable clock for Port F
-    GPIO_PORTF_LOCK_R = 0x4C4F434B;   // Unlock PF0 for changes
-    GPIO_PORTF_CR_R = 0x1F;           // Allow  PF0-PF4
-    GPIO_PORTF_DIR_R = 0x06;          // Set PF1, PF2 as outputs
-    GPIO_PORTF_PUR_R = 0x11;          // Enable pull-up on PF0, PF4
-    GPIO_PORTF_DEN_R = 0x1F;          // Enable digital function
+int main(void){
 
-    while (1) {
+    SYSCTL_RCGCGPIO_R = 0x20;
+    GPIO_PORTF_DIR_R = 0x0E;
+    GPIO_PORTF_DEN_R = 0x1F;  // Enable digital function for PF0-PF4
+    GPIO_PORTF_PUR_R = 0x10;  // Pull-up resistor
+    unsigned char leds[3] = {0x02, 0x08, 0x04}; // Red, Green, Blue
+    int i = 0;  // Start with Red
 
-        int sw1_pressed = !(GPIO_PORTF_DATA_R & SW1);
-        int sw2_pressed = !(GPIO_PORTF_DATA_R & SW2);
+    while(1){
 
-        if (sw1_pressed && sw2_pressed) {
-            GPIO_PORTF_DATA_R = RED | BLUE;
-        }
-        else if (sw1_pressed) {
-            GPIO_PORTF_DATA_R = RED;
-        }
-        else if (sw2_pressed) {
-            GPIO_PORTF_DATA_R = BLUE;
-        }
-        else {
-            GPIO_PORTF_DATA_R = 0x00;
+        if(!(GPIO_PORTF_DATA_R & 0x10)){
+            delay();
+            GPIO_PORTF_DATA_R = leds[i];    // Turn on current LED
+            i = (i+1) % 3;                  // Move to next color
+
+
+            while(!(GPIO_PORTF_DATA_R & 0x10));
+            delay();
         }
     }
 }
